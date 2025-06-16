@@ -100,8 +100,9 @@ The following environment variables or properties are required:
 ## Demo and Frontend
 There is a presentation of the backend implementation along with the frontend. You can view the working project there too.
 
-➡️ **Frontend GitHub Repository**: [Insert your frontend GitHub link here]
-
+```aiignore
+Car Sharing.ppt
+```
 
 ## License
 This project is licensed under the Apache 2.0 License.
