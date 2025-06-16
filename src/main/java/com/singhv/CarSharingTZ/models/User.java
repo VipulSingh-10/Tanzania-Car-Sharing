@@ -1,0 +1,59 @@
+package com.singhv.CarSharingTZ.models;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Positive;
+import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.Date;
+import java.util.List;
+
+@Data
+@Document
+public class User {
+    @Id
+    private String userId;
+
+    @NotBlank
+    private String fullName;
+
+    @NotBlank
+    @Email
+    private String emailId;
+
+    @NotBlank
+    private String phoneNumber;
+
+    @NotBlank
+    private String password;
+
+    @Positive
+    private int age;
+
+    @Past
+    private Date dob;
+
+    private String empId;
+    private String organisationName;
+    private String profilePicUrl;
+    private List<Vehicles> userCars;
+
+    private Date createdDate = new Date();
+
+    // Initialize createdBy in constructor instead of directly
+    private String createdBy;
+
+    public User() {
+        this.createdDate = new Date();
+    }
+
+    // Post-construct method to set createdBy after emailId is set
+    public void initializeCreatedBy() {
+        if (this.createdBy == null && this.emailId != null) {
+            this.createdBy = this.emailId;
+        }
+    }
+}
