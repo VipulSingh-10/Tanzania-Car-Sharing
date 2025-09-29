@@ -7,9 +7,9 @@ COPY eureka-server ./eureka-server
 COPY api-gateway ./api-gateway
 COPY user-service ./user-service
 COPY vehicle-service ./vehicle-service
-COPY booking-service ./booking-service
-COPY payment-service ./payment-service
+COPY ride-service ./ride-service
 COPY notification-service ./notification-service
+COPY trip-service ./trip-service
 
 # Install parent POM to local Maven repo, then build eureka-server
 RUN mvn -N install && \
