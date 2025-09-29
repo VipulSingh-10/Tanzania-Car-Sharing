@@ -1,15 +1,21 @@
 server:
-  port: 8761
+  port: ${PORT:8761}
 
 eureka:
   instance:
-    hostname: eureka-server
+    hostname: ${HOSTNAME:eureka-server}
     prefer-ip-address: true
+    non-secure-port-enabled: false
+    secure-port-enabled: true
+    secure-port: ${PORT:8761}
+    statusPageUrl: https://${eureka.instance.hostname}/actuator/info
+    healthCheckUrl: https://${eureka.instance.hostname}/actuator/health
+    homePageUrl: https://${eureka.instance.hostname}/
   client:
     register-with-eureka: false
     fetch-registry: false
     service-url:
-      defaultZone: http://${eureka.instance.hostname}:${server.port}/eureka/
+      defaultZone: https://${eureka.instance.hostname}/eureka/
 
 spring:
   application:

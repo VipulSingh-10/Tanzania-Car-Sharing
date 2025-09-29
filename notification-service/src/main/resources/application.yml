@@ -1,5 +1,5 @@
 server:
-  port: 8085
+  port: ${PORT:8085}
 
 spring:
   application:
@@ -8,9 +8,16 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka/
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
+    hostname: ${HOSTNAME:localhost}
+    non-secure-port-enabled: false
+    secure-port-enabled: true
+    secure-port: ${PORT:8085}
+    statusPageUrl: https://${eureka.instance.hostname}/actuator/info
+    healthCheckUrl: https://${eureka.instance.hostname}/actuator/health
+    homePageUrl: https://${eureka.instance.hostname}/
 
 management:
   endpoints:
@@ -20,6 +27,6 @@ management:
 
 firebase:
   config:
-    path: ${FIREBASE_CONFIG_PATH:classpath:firebase-sdk.json}
+    path: ${FIREBASE_CONFIG_PATH:/etc/secrets/firebase.json}
   database:
     url: ${FIREBASE_DATABASE_URL:https://your-project.firebaseio.com}
