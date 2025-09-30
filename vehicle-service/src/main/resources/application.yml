@@ -15,12 +15,12 @@ eureka:
   instance:
     prefer-ip-address: true
     hostname: ${HOSTNAME:localhost}
-    non-secure-port-enabled: false
-    secure-port-enabled: true
-    secure-port: ${PORT:8082}
-    statusPageUrl: https://${eureka.instance.hostname}/actuator/info
-    healthCheckUrl: https://${eureka.instance.hostname}/actuator/health
-    homePageUrl: https://${eureka.instance.hostname}/
+    non-secure-port-enabled: true
+    secure-port-enabled: false
+    non-secure-port: ${PORT:8082}
+    statusPageUrl: http://${eureka.instance.hostname}/actuator/info
+    healthCheckUrl: http://${eureka.instance.hostname}/actuator/health
+    homePageUrl: http://${eureka.instance.hostname}/
 
 management:
   endpoints:
