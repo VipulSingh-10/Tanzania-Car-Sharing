@@ -20,6 +20,16 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+
+    @GetMapping("/health")
+    public ResponseDTO<String> healthCheck() {
+        ResponseDTO<String> response = new ResponseDTO<>();
+        response.setSuccess(true);
+        response.setErrorMessage(null);
+        response.setResponseContent("User Service is up and running!");
+        return response;
+    }
+
     @GetMapping(value = "/{userId}")
     public ResponseDTO<UserInfoDTO> getUserInfo(@PathVariable String userId) {
         log.info("Get user info for userId: {}", userId);
