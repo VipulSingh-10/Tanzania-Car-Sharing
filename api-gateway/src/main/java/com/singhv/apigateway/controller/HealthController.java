@@ -9,11 +9,10 @@ public class HealthController {
 
     @GetMapping("/health")
     public ResponseDTO<String> healthCheck() {
-
-        ResponseDTO<String> response = new ResponseDTO();
-        response.setSuccess(true);
-        response.setErrorMessage(null);
-        response.setResponseContent("API Gateway is up and running!");
-        return response;
+        ResponseDTO<String> dto = new ResponseDTO<>();
+        dto.setSuccess(true);
+        dto.setErrorMessage(null);
+        dto.setResponseContent("API Gateway Service is alive");
+        return dto;
     }
 }
