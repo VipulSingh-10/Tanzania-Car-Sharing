@@ -1,20 +1,6 @@
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:7.0
-    container_name: carsharing-mongodb
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: password
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - carsharing-network
-
   eureka-server:
     build:
       context: ./eureka-server
@@ -53,10 +39,9 @@ services:
       - "8081:8081"
     depends_on:
       - eureka-server
-      - mongodb
     environment:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/carsharing_users?authSource=admin
+      - MONGODB_URI=mongodb+srv://singhv:NotANewPasswordForMongo@cluster0.akdsgeh.mongodb.net/carsharingDB?retryWrites=true&w=majority&appName=Cluster0
     networks:
       - carsharing-network
 
@@ -69,10 +54,9 @@ services:
       - "8082:8082"
     depends_on:
       - eureka-server
-      - mongodb
     environment:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/carsharing_vehicles?authSource=admin
+      - MONGODB_URI=mongodb+srv://singhv:NotANewPasswordForMongo@cluster0.akdsgeh.mongodb.net/carsharingDB?retryWrites=true&w=majority&appName=Cluster0
     networks:
       - carsharing-network
 
@@ -85,10 +69,9 @@ services:
       - "8083:8083"
     depends_on:
       - eureka-server
-      - mongodb
     environment:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/carsharing_trips?authSource=admin
+      - MONGODB_URI=mongodb+srv://singhv:NotANewPasswordForMongo@cluster0.akdsgeh.mongodb.net/carsharingDB?retryWrites=true&w=majority&appName=Cluster0
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     networks:
       - carsharing-network
@@ -102,10 +85,9 @@ services:
       - "8084:8084"
     depends_on:
       - eureka-server
-      - mongodb
     environment:
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - MONGODB_URI=mongodb://admin:password@mongodb:27017/carsharing_rides?authSource=admin
+      - MONGODB_URI=mongodb+srv://singhv:NotANewPasswordForMongo@cluster0.akdsgeh.mongodb.net/carsharingDB?retryWrites=true&w=majority&appName=Cluster0
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     networks:
       - carsharing-network
@@ -125,9 +107,6 @@ services:
       - FIREBASE_DATABASE_URL=${FIREBASE_DATABASE_URL}
     networks:
       - carsharing-network
-
-volumes:
-  mongodb_data:
 
 networks:
   carsharing-network:
