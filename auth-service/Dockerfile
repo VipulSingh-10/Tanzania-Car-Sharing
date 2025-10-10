@@ -6,6 +6,7 @@ COPY pom.xml .
 COPY common ./common
 COPY eureka-server ./eureka-server
 COPY api-gateway ./api-gateway
+COPY auth-service ./auth-service
 COPY user-service ./user-service
 COPY vehicle-service ./vehicle-service
 COPY ride-service ./ride-service
@@ -22,6 +23,6 @@ RUN mvn -N install && \
 # Runtime stage
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /root/eureka-server/target/*.jar app.jar
-EXPOSE 8761
+COPY --from=build /root/auth-service/target/*.jar app.jar
+EXPOSE 8089
 ENTRYPOINT ["java", "-jar", "app.jar"]
