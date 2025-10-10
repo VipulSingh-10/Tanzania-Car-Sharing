@@ -6,7 +6,8 @@ COPY pom.xml .
 COPY common ./common
 COPY eureka-server ./eureka-server
 COPY api-gateway ./api-gateway
-COPY user-service ./user-service
+COPY auth-service ./auth-service
+COPY users-service ./users-service
 COPY vehicle-service ./vehicle-service
 COPY ride-service ./ride-service
 COPY notification-service ./notification-service
@@ -29,16 +30,16 @@ RUN mkdir -p /root/.m2 && \
   </mirrors> \
 </settings>' > /root/.m2/settings.xml
 
-# Install parent POM and common module, then build user-service WITH RETRY
+# Install parent POM and common module, then build users-service WITH RETRY
 RUN (mvn -N install || (sleep 10 && mvn -N install) || (sleep 30 && mvn -N install)) && \
     cd common && \
     (mvn clean install -DskipTests || (sleep 10 && mvn clean install -DskipTests) || (sleep 30 && mvn clean install -DskipTests)) && \
-    cd ../user-service && \
+    cd ../users-service && \
     (mvn clean package -DskipTests || (sleep 10 && mvn clean package -DskipTests) || (sleep 30 && mvn clean package -DskipTests))
 
 # Runtime stage
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY --from=build /root/user-service/target/*.jar app.jar
+COPY --from=build /root/users-service/target/*.jar app.jar
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]
