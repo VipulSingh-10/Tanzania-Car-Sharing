@@ -6,7 +6,7 @@ COPY pom.xml .
 COPY common ./common
 COPY eureka-server ./eureka-server
 COPY api-gateway ./api-gateway
-COPY users-service ./users-service
+COPY user-service ./user-service
 COPY vehicle-service ./vehicle-service
 COPY ride-service ./ride-service
 COPY notification-service ./notification-service

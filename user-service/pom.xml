@@ -7,7 +7,7 @@
 		<artifactId>CarSharingTZ-Parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>users-service</artifactId>
+	<artifactId>user-service</artifactId>
 	<name>User Service</name>
 	<description>User Management Microservice</description>
 
