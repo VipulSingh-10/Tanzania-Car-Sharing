@@ -1,10 +1,13 @@
-
 spring:
-  application: name=auth-service
-  mongodb:
-    uri: ${MONGODB_URI:mongodb+srv://singhv:NotANewPasswordForMongo@cluster0.akdsgeh.mongodb.net/carsharingDB?retryWrites=true&w=majority&appName=Cluster0}
+  application:
+    name: auth-service
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://singhv:NotANewPasswordForMongo@cluster0.akdsgeh.mongodb.net/carsharingDB?retryWrites=true&w=majority&appName=Cluster0}
+
 server:
-  port: 8087
+  port: ${PORT:8087}
+
 eureka:
   client:
     service-url:
@@ -14,7 +17,7 @@ eureka:
     hostname: ${HOSTNAME:localhost}
     non-secure-port-enabled: true
     secure-port-enabled: false
-    non-secure-port: ${PORT:8081}
+    non-secure-port: ${PORT:8087}
     statusPageUrl: http://${eureka.instance.hostname}/actuator/info
     healthCheckUrl: http://${eureka.instance.hostname}/actuator/health
     homePageUrl: http://${eureka.instance.hostname}/
