@@ -1,6 +1,7 @@
 package com.singhv.tripservice.model;
 
 import com.singhv.common.models.Points;
+import com.singhv.tripservice.dto.OSRM.Geometry;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -14,7 +15,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.Instant;
 import java.util.List;
 
-@Document
+@Document(collection = "trips")
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -41,6 +42,11 @@ public class Trips {
 
     // Store the timezone of the trip's source location (e.g., "Asia/Kolkata", "Europe/Berlin")
     private String tripTimezone;
+
+    // Route information from OSRM
+    private Geometry routeGeometry; // Full route path as GeoJSON LineString
+    private double routeDistance; // Distance in meters
+    private double routeDuration; // Duration in seconds
 
     private @PositiveOrZero double pricePerKm;
     private List<ObjectId> joinedRidersId;

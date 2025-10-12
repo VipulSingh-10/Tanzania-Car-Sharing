@@ -3,6 +3,7 @@ package com.singhv.tripservice.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.singhv.common.models.Points;
+import com.singhv.tripservice.dto.OSRM.Geometry;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,6 +32,13 @@ public class OfferRideResponseDTO {
 
     // Original timezone where the trip starts (e.g., "Asia/Kolkata")
     private String tripTimezone;
+
+    // Route information from OSRM
+    private Geometry routeGeometry; // Full route path as GeoJSON LineString
+    private Double routeDistanceInMeters; // Distance in meters
+    private Double routeDistanceInKm; // Distance in kilometers (for convenience)
+    private Double routeDurationInSeconds; // Duration in seconds
+    private Double routeDurationInMinutes; // Duration in minutes (for convenience)
 
     private Boolean tripCreated;
     private String errorMessage = null;
