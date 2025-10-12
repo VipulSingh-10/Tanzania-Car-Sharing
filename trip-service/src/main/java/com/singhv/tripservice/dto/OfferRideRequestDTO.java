@@ -16,7 +16,7 @@ import java.time.ZonedDateTime;
 @Builder
 public class OfferRideRequestDTO {
 
-    private String VehicleNumber;
+    private String vehicleNumber;
     private Points sourceAddress;
     private Points destinationAddress;
 

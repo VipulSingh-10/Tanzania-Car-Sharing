@@ -22,7 +22,10 @@ public class OfferRideController {
             @RequestBody RequestDTO<OfferRideRequestDTO> request) {
 
         ResponseDTO<OfferRideResponseDTO> response = offerRideService.offerRide(request);
-
+        OfferRideResponseDTO responseContent = response.getResponseContent();
+        if (responseContent.gettripCreated == true){
+            response.setSuccess(true);
+        }
         if (response.getResponseContent().getTripCreated()) {
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } else {
