@@ -39,24 +39,31 @@ public class FindRideController {
         // Use userId from header if available, otherwise from request body
         String effectiveUserId = userId != null ? userId : request.getUserId();
 
+        // Validate required fields
+        if (rideRequest.getPickupPoint() == null || rideRequest.getDestinationPoint() == null) {
+            log.error("Missing required pickup or destination point");
+            ResponseDTO<List<Trips>> errorResponse = new ResponseDTO<>();
+            errorResponse.setSuccess(false);
+            errorResponse.setErrorMessage("Pickup point and destination point are required");
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
+        Double pickupLat = rideRequest.getPickupPoint().getLatitude();
+        Double pickupLon = rideRequest.getPickupPoint().getLongitude();
+        Double destLat = rideRequest.getDestinationPoint().getLatitude();
+        Double destLon = rideRequest.getDestinationPoint().getLongitude();
+
         log.info("Finding rides for user: {} from ({}, {}) to ({}, {})",
                 effectiveUserId,
-                rideRequest.getPickupLatitude(),
-                rideRequest.getPickupLongitude(),
-                rideRequest.getDropoffLatitude(),
-                rideRequest.getDropoffLongitude());
+                pickupLat, pickupLon, destLat, destLon);
 
-        // Default radius to 5km if not provided
-        double sourceRadius = rideRequest.getPickupRadiusKm() != null ? rideRequest.getPickupRadiusKm() : 5.0;
-        double destRadius = rideRequest.getDropoffRadiusKm() != null ? rideRequest.getDropoffRadiusKm() : 5.0;
+        // Default radius to 5km for geospatial search
+        double sourceRadius = 5.0;
+        double destRadius = 5.0;
 
         List<Trips> matchingTrips = geoService.findTripsMatchingRoute(
-                rideRequest.getPickupLatitude(),
-                rideRequest.getPickupLongitude(),
-                sourceRadius,
-                rideRequest.getDropoffLatitude(),
-                rideRequest.getDropoffLongitude(),
-                destRadius
+                pickupLat, pickupLon, sourceRadius,
+                destLat, destLon, destRadius
         );
 
         log.info("Found {} matching trips for user: {}", matchingTrips.size(), effectiveUserId);

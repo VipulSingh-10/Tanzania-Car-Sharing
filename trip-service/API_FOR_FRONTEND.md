@@ -37,18 +37,20 @@ Authorization: Bearer <JWT_TOKEN>
 - **Body:**
 ```json
 {
-  "userId": "user@example.com",
+  "userId": "user1@example.com",
   "requestContent": {
-    "pickupLatitude": -6.7924,
-    "pickupLongitude": 39.2083,
-    "pickupLocation": "Dar es Salaam",
-    "pickupRadiusKm": 5.0,
-    "dropoffLatitude": -6.1630,
-    "dropoffLongitude": 35.7516,
-    "dropoffLocation": "Dodoma",
-    "dropoffRadiusKm": 5.0,
-    "departureTime": "2025-10-15T10:00:00",
-    "numberOfPassengers": 2
+    "pickupPoint": {
+      "latitude": 48.3638222,
+      "longitude": 10.6866494,
+      "placeAddress": "Augsburg (district), Bavaria, Germany"
+    },
+    "destinationPoint": {
+      "latitude": 48.1371079,
+      "longitude": 11.5753822,
+      "placeAddress": "Munich, Bavaria, Germany"
+    },
+    "rideStartTime": "2025-10-14T10:13",
+    "requestedSeats": 1
   }
 }
 ```
@@ -61,9 +63,9 @@ Authorization: Bearer <JWT_TOKEN>
       "tripId": "string",
       "driverEmail": "string",
       "vehicleNumber": "string",
-      "sourceAddress": { "latitude": -6.7924, "longitude": 39.2083, "placeAddress": "Dar es Salaam" },
-      "destinationAddress": { "latitude": -6.1630, "longitude": 35.7516, "placeAddress": "Dodoma" },
-      "tripStartDateTime": "2025-10-15T10:00:00",
+      "sourceAddress": { "latitude": 48.3638222, "longitude": 10.6866494, "placeAddress": "Augsburg" },
+      "destinationAddress": { "latitude": 48.1371079, "longitude": 11.5753822, "placeAddress": "Munich" },
+      "tripStartDateTime": "2025-10-14T10:00:00",
       "availableSeats": 3,
       ...
     }

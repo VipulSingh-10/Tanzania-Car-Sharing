@@ -5,8 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 /**
  * DTO for finding available rides
  */
@@ -16,17 +14,17 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class FindRideRequestDTO {
 
-    private Double pickupLatitude;
-    private Double pickupLongitude;
-    private String pickupLocation;
-    private Double pickupRadiusKm;
+    private LocationPoint pickupPoint;
+    private LocationPoint destinationPoint;
+    private String rideStartTime;
+    private Integer requestedSeats;
 
-    private Double dropoffLatitude;
-    private Double dropoffLongitude;
-    private String dropoffLocation;
-    private Double dropoffRadiusKm;
-
-    private LocalDateTime departureTime;
-    private Integer numberOfPassengers;
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class LocationPoint {
+        private Double latitude;
+        private Double longitude;
+        private String placeAddress;
+    }
 }
-
