@@ -76,6 +76,8 @@ public class TripGeospatialService {
 
     /**
      * Find trips matching both source and destination within given radius
+     * Note: MongoDB doesn't allow multiple $geoNear operations in one query,
+     * so we search by source first, then filter by destination in memory
      *
      * @param sourceLat         Source latitude
      * @param sourceLon         Source longitude
@@ -89,26 +91,43 @@ public class TripGeospatialService {
             double sourceLat, double sourceLon, double sourceRadiusKm,
             double destLat, double destLon, double destRadiusKm) {
 
+        // Step 1: Find trips with source near the pickup point
         Point sourceLocation = new Point(sourceLon, sourceLat);
         Distance sourceDistance = new Distance(sourceRadiusKm, Metrics.KILOMETERS);
-
-        Point destLocation = new Point(destLon, destLat);
-        Distance destDistance = new Distance(destRadiusKm, Metrics.KILOMETERS);
 
         Query query = new Query();
         query.addCriteria(Criteria.where("sourceLocation")
                 .nearSphere(sourceLocation)
                 .maxDistance(sourceDistance.getNormalizedValue()));
-        query.addCriteria(Criteria.where("destinationLocation")
-                .nearSphere(destLocation)
-                .maxDistance(destDistance.getNormalizedValue()));
         query.addCriteria(Criteria.where("tripStatus").is("OFFERED"));
 
-        List<Trips> trips = mongoTemplate.find(query, Trips.class);
-        log.info("Found {} trips matching route from ({}, {}) to ({}, {}) within {} km and {} km",
-                trips.size(), sourceLat, sourceLon, destLat, destLon, sourceRadiusKm, destRadiusKm);
+        List<Trips> tripsNearSource = mongoTemplate.find(query, Trips.class);
 
-        return trips;
+        log.info("Found {} trips near source ({}, {}) within {} km",
+                tripsNearSource.size(), sourceLat, sourceLon, sourceRadiusKm);
+
+        // Step 2: Filter results by destination proximity
+        Point destLocation = new Point(destLon, destLat);
+        double destRadiusInMeters = destRadiusKm * 1000;
+
+        List<Trips> matchingTrips = tripsNearSource.stream()
+                .filter(trip -> {
+                    if (trip.getDestinationLocation() == null) {
+                        return false;
+                    }
+                    double distance = calculateDistance(
+                            destLat, destLon,
+                            trip.getDestinationLocation().getY(),
+                            trip.getDestinationLocation().getX()
+                    );
+                    return distance <= destRadiusInMeters;
+                })
+                .toList();
+
+        log.info("Found {} trips matching route from ({}, {}) to ({}, {}) within {} km and {} km",
+                matchingTrips.size(), sourceLat, sourceLon, destLat, destLon, sourceRadiusKm, destRadiusKm);
+
+        return matchingTrips;
     }
 
     /**
@@ -138,5 +157,23 @@ public class TripGeospatialService {
 
         return trips;
     }
-}
 
+    /**
+     * Calculate distance between two points using Haversine formula
+     * @return distance in meters
+     */
+    private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+        final int EARTH_RADIUS = 6371000; // meters
+
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+        return EARTH_RADIUS * c;
+    }
+}
