@@ -11,6 +11,7 @@ import com.singhv.tripservice.service.OfferRideService;
 import com.singhv.tripservice.service.routes.OSMRoute;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.geo.Point;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -90,6 +91,18 @@ public class OfferRideServiceImpl implements OfferRideService {
         // Extract route information
         Route route = osrmResponse.getRoutes().get(0);
 
+        // Create GeoJSON Points for geospatial queries
+        // MongoDB GeoJSON format: [longitude, latitude]
+        Point sourceLocation = new Point(
+                requestContent.getSourceAddress().getLongitude(),
+                requestContent.getSourceAddress().getLatitude()
+        );
+
+        Point destinationLocation = new Point(
+                requestContent.getDestinationAddress().getLongitude(),
+                requestContent.getDestinationAddress().getLatitude()
+        );
+
         // Create a new trip - store in UTC for universal consistency
         Trips newTrip = Trips.builder()
                 .driverId(offerRideRequest.getUserId())
@@ -97,6 +110,8 @@ public class OfferRideServiceImpl implements OfferRideService {
                 .vehicleNumber(requestContent.getVehicleNumber())
                 .sourceAddress(requestContent.getSourceAddress())
                 .destinationAddress(requestContent.getDestinationAddress())
+                .sourceLocation(sourceLocation)  // GeoJSON Point for geospatial queries
+                .destinationLocation(destinationLocation)  // GeoJSON Point for geospatial queries
                 .offeredSeat(requestContent.getOfferedSeat())
                 .currSeats(0)
                 .tripStartDateTimeUTC(tripStartInstant)  // Store in UTC

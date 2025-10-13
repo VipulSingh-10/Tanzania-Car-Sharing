@@ -11,7 +11,10 @@ import lombok.NoArgsConstructor;
 import lombok.Data;
 import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
+import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.geo.Point;
 
 import java.time.Instant;
 import java.util.List;
@@ -24,20 +27,35 @@ import java.util.List;
 public class Trips {
 
     @Id
+    private String tripId;  // Remove @NotBlank - MongoDB auto-generates this
+
     @NotBlank
-    private String tripId;
-    private @NotBlank String tripStatus;
+    private String tripStatus;
+
     @NotBlank
     private String vehicleNumber;
+
     @NotBlank
     private String driverId;
+
     @NotBlank
     private Points sourceAddress;
+
     @NotBlank
     private Points destinationAddress;
+
+    // GeoJSON fields for geospatial queries
+    @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
+    private Point sourceLocation;
+
+    @GeoSpatialIndexed(type = GeoSpatialIndexType.GEO_2DSPHERE)
+    private Point destinationLocation;
+
     @Min(1L)
     private int offeredSeat;
-    private @Min(0L) int currSeats;
+
+    @Min(0L)
+    private int currSeats;
 
     // Store in UTC for consistency across timezones
     private Instant tripStartDateTimeUTC;
@@ -50,7 +68,9 @@ public class Trips {
     private double routeDistance; // Distance in meters
     private double routeDuration; // Duration in seconds
 
-    private @PositiveOrZero double pricePerKm;
+    @PositiveOrZero
+    private double pricePerKm;
+
     private List<ObjectId> joinedRidersId;
     private Instant createdDate = Instant.now();
 }
