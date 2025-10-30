@@ -38,7 +38,11 @@ spring:
       globalcors:
         corsConfigurations:
           '[/**]':
-            allowedOrigins: ${ALLOWED_ORIGINS:*}
+            allowedOrigins:
+              - https://tanzania-car-sharing.netlify.app
+              - http://localhost:3000
+              - https://localhost:3000
+              - http://localhost:8080 
             allowedMethods:
               - GET
               - POST
@@ -46,7 +50,7 @@ spring:
               - DELETE
               - OPTIONS
             allowedHeaders: "*"
-            allowCredentials: false
+            allowCredentials: true
 
 eureka:
   client:
