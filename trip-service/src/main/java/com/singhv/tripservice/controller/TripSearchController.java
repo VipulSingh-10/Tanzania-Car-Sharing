@@ -84,14 +84,18 @@ public class TripSearchController {
             @RequestParam(defaultValue = "5.0") double sourceRadiusKm,
             @RequestParam double destLat,
             @RequestParam double destLon,
-            @RequestParam(defaultValue = "5.0") double destRadiusKm) {
+            @RequestParam(defaultValue = "5.0") double destRadiusKm,
+            @RequestParam String rideStartTime,
+            @RequestParam Integer requestedSeats,
+            @RequestParam String effectiveUserId
+            ) {
 
         log.info("Searching for trips from ({}, {}) [{}km] to ({}, {}) [{}km]",
                 sourceLat, sourceLon, sourceRadiusKm, destLat, destLon, destRadiusKm);
 
         List<Trips> trips = geoService.findTripsMatchingRoute(
                 sourceLat, sourceLon, sourceRadiusKm,
-                destLat, destLon, destRadiusKm
+                destLat, destLon, destRadiusKm, rideStartTime, requestedSeats, effectiveUserId
         );
         return ResponseEntity.ok(trips);
     }

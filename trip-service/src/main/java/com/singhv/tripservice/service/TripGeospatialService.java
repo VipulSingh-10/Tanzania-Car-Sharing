@@ -11,6 +11,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -89,8 +95,48 @@ public class TripGeospatialService {
      */
     public List<Trips> findTripsMatchingRoute(
             double sourceLat, double sourceLon, double sourceRadiusKm,
-            double destLat, double destLon, double destRadiusKm) {
-
+            double destLat, double destLon, double destRadiusKm, String rideStartTime, Integer requestedSeats, String effectiveUserId) {
+        
+        // Step 0: Parse the rideStartTime and calculate the date range for filtering
+        Instant startOfDay = null;
+        Instant endOfDay = null;
+        
+        if (rideStartTime != null && !rideStartTime.isEmpty()) {
+            try {
+                ZonedDateTime requestedDateTime;
+                
+                // Try to parse with timezone first, if fails, use system timezone
+                if (rideStartTime.contains("+") || rideStartTime.contains("Z")) {
+                    // Has timezone info
+                    requestedDateTime = ZonedDateTime.parse(rideStartTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                } else {
+                    // No timezone, assume system timezone
+                    LocalDateTime localDateTime = LocalDateTime.parse(rideStartTime);
+                    requestedDateTime = localDateTime.atZone(ZoneId.systemDefault());
+                    log.info("No timezone in input, using system default: {}", ZoneId.systemDefault());
+                }
+                
+                // Get the start and end of that day
+                LocalDate requestedDate = requestedDateTime.toLocalDate();
+                ZoneId timezone = requestedDateTime.getZone();
+                
+                startOfDay = requestedDate.atStartOfDay(timezone).toInstant();
+                endOfDay = requestedDate.plusDays(1).atStartOfDay(timezone).toInstant();
+                
+                log.info("Filtering trips for date: {} in timezone: {}. UTC range: {} to {}", 
+                        requestedDate, timezone, startOfDay, endOfDay);
+            } catch (Exception e) {
+                log.error("Failed to parse rideStartTime: {}. Skipping date filter. Error: {}", 
+                        rideStartTime, e.getMessage());
+            }
+        } else {
+            log.warn("No rideStartTime provided. Returning all trips (with valid timestamps only).");
+        }
+        
+        // Make final variables for lambda
+        final Instant finalStartOfDay = startOfDay;
+        final Instant finalEndOfDay = endOfDay;
+        
         // Step 1: Find trips with source near the pickup point
         Point sourceLocation = new Point(sourceLon, sourceLat);
         Distance sourceDistance = new Distance(sourceRadiusKm, Metrics.KILOMETERS);
@@ -100,18 +146,59 @@ public class TripGeospatialService {
                 .nearSphere(sourceLocation)
                 .maxDistance(sourceDistance.getNormalizedValue()));
         query.addCriteria(Criteria.where("tripStatus").is("OFFERED"));
+        
+        // Add date range filter if we have valid start/end times
+        // This will also automatically filter out trips with null tripStartDateTimeUTC
+        if (startOfDay != null && endOfDay != null) {
+            query.addCriteria(Criteria.where("tripStartDateTimeUTC")
+                    .gte(startOfDay)
+                    .lt(endOfDay)
+                    .ne(null));  // Combined: date range AND not null
+        } else {
+            // No date filter, but still exclude old trips without timestamp
+            query.addCriteria(Criteria.where("tripStartDateTimeUTC").ne(null));
+        }
+        
+        // Step 0.1: Filter by available seats (offered seats should be >= requested seats)
+        // This means: (offeredSeat - currSeats) >= requestedSeats
+        // Which translates to: availableSeats >= requestedSeats
+        if (requestedSeats != null && requestedSeats > 0) {
+            // We need to filter in-memory since MongoDB doesn't support computed field queries directly
+            // But we can at least ensure offeredSeat >= requestedSeats as a baseline
+            query.addCriteria(Criteria.where("offeredSeat").gte(requestedSeats));
+        }
+        
+        // Step 0.2: Exclude trips created by the current user (don't show user their own trips)
+        if (effectiveUserId != null && !effectiveUserId.isEmpty()) {
+            query.addCriteria(Criteria.where("driverId").ne(effectiveUserId));
+        }
 
         List<Trips> tripsNearSource = mongoTemplate.find(query, Trips.class);
 
-        log.info("Found {} trips near source ({}, {}) within {} km",
+        log.info("Found {} trips near source ({}, {}) within {} km after initial filtering",
                 tripsNearSource.size(), sourceLat, sourceLon, sourceRadiusKm);
 
-        // Step 2: Filter results by destination proximity
-        Point destLocation = new Point(destLon, destLat);
+        // Step 2: Filter results by destination proximity and available seats
         double destRadiusInMeters = destRadiusKm * 1000;
 
         List<Trips> matchingTrips = tripsNearSource.stream()
                 .filter(trip -> {
+                    // Safety check: Skip trips without valid tripStartDateTimeUTC
+                    if (trip.getTripStartDateTimeUTC() == null) {
+                        log.warn("Skipping trip {} - missing tripStartDateTimeUTC", trip.getTripId());
+                        return false;
+                    }
+                    
+                    // Double-check date range if specified (defense in depth)
+                    if (finalStartOfDay != null && finalEndOfDay != null) {
+                        Instant tripTime = trip.getTripStartDateTimeUTC();
+                        if (tripTime.isBefore(finalStartOfDay) || !tripTime.isBefore(finalEndOfDay)) {
+                            log.debug("Skipping trip {} - outside date range", trip.getTripId());
+                            return false;
+                        }
+                    }
+                    
+                    // Check destination proximity
                     if (trip.getDestinationLocation() == null) {
                         return false;
                     }
@@ -120,12 +207,26 @@ public class TripGeospatialService {
                             trip.getDestinationLocation().getY(),
                             trip.getDestinationLocation().getX()
                     );
-                    return distance <= destRadiusInMeters;
+                    
+                    if (distance > destRadiusInMeters) {
+                        return false;
+                    }
+                    
+                    // Step 0.1 (continued): Check actual available seats
+                    // availableSeats = offeredSeat - currSeats
+                    if (requestedSeats != null && requestedSeats > 0) {
+                        int availableSeats = trip.getOfferedSeat() - trip.getCurrSeats();
+                        if (availableSeats < requestedSeats) {
+                            return false;
+                        }
+                    }
+                    
+                    return true;
                 })
                 .toList();
 
-        log.info("Found {} trips matching route from ({}, {}) to ({}, {}) within {} km and {} km",
-                matchingTrips.size(), sourceLat, sourceLon, destLat, destLon, sourceRadiusKm, destRadiusKm);
+        log.info("Found {} trips matching route from ({}, {}) to ({}, {}) within {} km and {} km with {} requested seats for user {}",
+                matchingTrips.size(), sourceLat, sourceLon, destLat, destLon, sourceRadiusKm, destRadiusKm, requestedSeats, effectiveUserId);
 
         return matchingTrips;
     }

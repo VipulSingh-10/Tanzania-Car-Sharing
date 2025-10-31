@@ -52,7 +52,7 @@ public class FindRideController {
         Double pickupLon = rideRequest.getPickupPoint().getLongitude();
         Double destLat = rideRequest.getDestinationPoint().getLatitude();
         Double destLon = rideRequest.getDestinationPoint().getLongitude();
-
+        
         log.info("Finding rides for user: {} from ({}, {}) to ({}, {})",
                 effectiveUserId,
                 pickupLat, pickupLon, destLat, destLon);
@@ -60,12 +60,13 @@ public class FindRideController {
         // Default radius to 5km for geospatial search
         double sourceRadius = 5.0;
         double destRadius = 5.0;
-
+        
+         String rideStartTime = rideRequest.getRideStartTime();
+        Integer requestedSeats = rideRequest.getRequestedSeats();
         List<Trips> matchingTrips = geoService.findTripsMatchingRoute(
                 pickupLat, pickupLon, sourceRadius,
-                destLat, destLon, destRadius
+                destLat, destLon, destRadius, rideStartTime, requestedSeats, effectiveUserId
         );
-
         log.info("Found {} matching trips for user: {}", matchingTrips.size(), effectiveUserId);
 
         ResponseDTO<List<Trips>> response = new ResponseDTO<>();

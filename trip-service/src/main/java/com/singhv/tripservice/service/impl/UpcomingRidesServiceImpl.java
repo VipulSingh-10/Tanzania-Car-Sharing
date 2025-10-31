@@ -3,6 +3,8 @@ package com.singhv.tripservice.service.impl;
 import com.singhv.tripservice.dto.DriverUpcomingTripDTO;
 import com.singhv.tripservice.dto.PassengerUpcomingRideDTO;
 import com.singhv.tripservice.model.Trips;
+import com.singhv.tripservice.model.Rides;
+import com.singhv.tripservice.repository.RidesRepository;
 import com.singhv.tripservice.repository.TripsRepository;
 import com.singhv.tripservice.service.TimezoneConversionService;
 import com.singhv.tripservice.service.UpcomingRidesService;
@@ -23,6 +25,7 @@ public class UpcomingRidesServiceImpl implements UpcomingRidesService {
 
     private final TripsRepository tripsRepository;
     private final TimezoneConversionService timezoneService;
+    private final RidesRepository rideRepository;
 
     @Override
     public List<DriverUpcomingTripDTO> getDriverUpcomingTrips(String driverId) {
@@ -39,7 +42,6 @@ public class UpcomingRidesServiceImpl implements UpcomingRidesService {
         log.info("Found {} upcoming trips for driver: {}", upcomingTrips.size(), driverId);
         
         return upcomingTrips.stream()
-                .filter(trip -> "OFFERED".equals(trip.getTripStatus()) || "CONFIRMED".equals(trip.getTripStatus()))
                 .map(this::convertToDriverUpcomingTripDTO)
                 .collect(Collectors.toList());
     }
@@ -48,12 +50,41 @@ public class UpcomingRidesServiceImpl implements UpcomingRidesService {
     public List<PassengerUpcomingRideDTO> getPassengerUpcomingRides(String passengerId) {
         log.info("Fetching upcoming rides for passenger: {}", passengerId);
         
-        // TODO: This requires a Rider/Booking entity to track passenger bookings
-        // For now, return empty list - will need to implement booking system
-        // This should query a separate "bookings" or "riders" collection
+        Instant now = Instant.now();
+        List<Rides> upcomingRides = rideRepository.findByPassengerIdAndRideStartTimeUTCBetween(
+                passengerId,
+                now,
+                now.plusSeconds(365L * 24 * 60 * 60) // Next year
+        );
         
-        log.warn("Passenger booking system not yet implemented. Returning empty list.");
-        return new ArrayList<>();
+        log.info("Found {} upcoming rides for passenger: {}", upcomingRides.size(), passengerId);
+        
+        return upcomingRides.stream()
+                .map(this::convertToPassengerUpcomingRideDTO)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Convert Rides entity to PassengerUpcomingRideDTO
+     */
+    private PassengerUpcomingRideDTO convertToPassengerUpcomingRideDTO(Rides ride) {
+        // Convert UTC time to original ride timezone
+        ZonedDateTime rideTimeInOriginalZone = timezoneService.convertToTimezone(
+                ride.getRideStartTimeUTC(),
+                ride.getRideTimezone()
+        );
+        
+        return PassengerUpcomingRideDTO.builder()
+                .rideId(ride.getRideId())
+                .tripId(ride.getTripId())
+                .driverId(ride.getDriverId())
+                .rideStatus(ride.getRideStatus())
+                .pickupLocation(ride.getPickupLocation())
+                .dropoffLocation(ride.getDropoffLocation())
+                .tripStartDateTime(rideTimeInOriginalZone)
+                .tripTimezone(ride.getRideTimezone())
+                .bookedSeats(ride.getRequestedSeats())
+                .build();
     }
 
     /**
@@ -84,7 +115,7 @@ public class UpcomingRidesServiceImpl implements UpcomingRidesService {
                 .offeredSeat(trip.getOfferedSeat())
                 .availableSeats(availableSeats)
                 .bookedSeats(bookedSeats)
-                .passengers(new ArrayList<>()) // TODO: Fetch from bookings collection
+                .passengers(new ArrayList<>()) // TODO: 
                 .routeDistanceInKm(trip.getRouteDistance() / 1000.0)
                 .routeDurationInMinutes(trip.getRouteDuration() / 60.0)
                 .pricePerKm(trip.getPricePerKm())
